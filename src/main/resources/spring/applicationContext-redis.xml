@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+    <!--引入redis配置文件 注意spring不予许多处引入properties文件，找到项目中引入properties文件的位置，将此配置合并进去，或者通过逗号分隔在相应位置引入多文件-->
+    <context:property-placeholder location="classpath*:redis.properties"/>
+
+    <bean id="redisTemplate" class="org.springframework.data.redis.core.RedisTemplate">
+        <property name="connectionFactory" ref="lettuceConnectionFactory"/>
+        <!-- 其他配置 -->
+    </bean>
+
+    <bean id="stringRedisTemplate" class="org.springframework.data.redis.core.StringRedisTemplate">
+        <property name="connectionFactory" ref="lettuceConnectionFactory"/>
+        <!-- 其他配置 -->
+    </bean>
+
+    <!--redisConnectionFactory-->
+    <bean id="lettuceConnectionFactory" class="org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory">
+        <constructor-arg name="pool" ref="defaultLettucePool"/>
+    </bean>
+
+    <!--连接池配置-->
+    <bean id="defaultLettucePool" class="org.springframework.data.redis.connection.lettuce.DefaultLettucePool">
+        <constructor-arg name="sentinelConfiguration" ref="redisSentinelConfiguration"/>
+        <property name="poolConfig" ref="genericObjectPoolConfig"/>
+    </bean>
+
+    <!--哨兵集群信息配置-->
+    <bean id="redisSentinelConfiguration" class="org.springframework.data.redis.connection.RedisSentinelConfiguration">
+        <constructor-arg name="master" value="${lettuce.sentinel.master}"/>
+        <constructor-arg name="sentinelHostAndPorts">
+            <set>
+                <value type="java.lang.String">${lettuce.sentinel.node1}</value>
+                <value type="java.lang.String">${lettuce.sentinel.node2}</value>
+                <value type="java.lang.String">${lettuce.sentinel.node3}</value>
+            </set>
+        </constructor-arg>
+    </bean>
+    <!--common-pool2线程池配置-->
+    <bean id="genericObjectPoolConfig" class="org.apache.commons.pool2.impl.GenericObjectPoolConfig">
+        <property name="maxIdle" value="${lettuce.pool.maxIdle}"/>
+        <property name="minIdle" value="${lettuce.pool.minIdle}"/>
+        <property name="maxTotal" value="${lettuce.pool.maxTotal}"/>
+        <!-- 其他相关配置 -->
+    </bean>
+</beans>
